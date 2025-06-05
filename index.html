@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <title>Magical Document Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+    
+    <!-- Document conversion libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/rtf.js@latest/dist/rtf.min.js"></script>
+    
+    <style>
+        body {
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .bg-wallpaper {
+            background-image: url('wallpaper.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 300px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .toast.error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .toast.info {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        button, select, input {
+            min-height: 44px;
+            font-size: 16px;
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-wallpaper min-h-screen">
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black bg-opacity-30"></div>
+    
+    <!-- Main Container -->
+    <div class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-sm bg-white bg-opacity-95 backdrop-blur-sm rounded-xl shadow-2xl">
+            <div class="p-6 space-y-6">
+                <!-- Header -->
+                <div class="text-center space-y-3">
+                    <div class="bg-blue-100 rounded-full p-3 w-16 h-16 mx-auto flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-8 h-8 text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Document Converter</h1>
+                        <p class="text-sm text-gray-600">Convert documents effortlessly</p>
+                    </div>
+                </div>
+
+                <!-- File Selection -->
+                <div class="space-y-3">
+                    <input type="file" id="fileInput" accept=".txt,.pdf,.doc,.docx,.rtf,.asc,.wps,.wpd,.msg" class="hidden">
+                    <button id="selectFileBtn" class="w-full h-14 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 rounded-lg flex items-center justify-start px-4 text-left transition-colors">
+                        <i data-lucide="upload" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+                        <div class="flex-1 min-w-0">
+                            <span id="fileText">Select Document</span>
+                            <div id="fileSize" class="text-xs text-gray-500 hidden"></div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Output Format Selection -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-700">Convert to:</label>
+                    <select id="outputFormat" class="w-full h-12 px-3 border border-gray-300 rounded-lg bg-white">
+                        <option value="">Choose output format</option>
+                        <option value=".pdf">PDF Document</option>
+                        <option value=".txt">Plain Text</option>
+                    </select>
+                </div>
+
+                <!-- Progress Bar (hidden by default) -->
+                <div id="progressContainer" class="space-y-2 hidden">
+                    <div class="flex justify-between text-xs text-gray-600">
+                        <span>Converting...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    <button id="convertBtn" disabled class="w-full h-12 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors">
+                        Convert Document
+                    </button>
+
+                    <button id="downloadBtn" class="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg hidden">
+                        <i data-lucide="download" class="w-4 h-4 mr-2 inline"></i>
+                        Download Converted File
+                    </button>
+
+                    <button id="resetBtn" class="w-full h-10 text-gray-600 hover:text-gray-800 hidden">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 mr-2 inline"></i>
+                        Start Over
+                    </button>
+                </div>
+
+                <!-- Supported Formats -->
+                <div class="text-center pt-2 border-t border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">Supported formats:</p>
+                    <p class="text-xs text-gray-400 leading-relaxed">TXT • PDF • DOC • DOCX • RTF • ASC • WPS • WPD • MSG</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // Set PDF.js worker path
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+    <script src="app.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
