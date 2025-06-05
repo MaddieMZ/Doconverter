@@ -4,7 +4,7 @@ class DocumentConverter {
     this.convertedFile = null
     this.isConverting = false
     this.supportedInputFormats = [".txt", ".pdf", ".doc", ".docx", ".rtf", ".asc", ".wps", ".wpd", ".msg"]
-    this.supportedOutputFormats = [".pdf", ".txt"]
+    this.supportedOutputFormats = [".pdf", ".txt", ".doc", ".docx", ".rtf", ".asc", ".wps", ".wpd", ".msg"]
 
     this.initializeElements()
     this.bindEvents()
@@ -115,19 +115,41 @@ class DocumentConverter {
 
     // Convert based on output format
     let result
-    if (outputFormat === ".txt") {
-      result = await this.convertToText(fileContent, inputFormat)
-    } else if (outputFormat === ".pdf") {
-      result = await this.convertToPdf(fileContent, inputFormat)
-    } else {
-      throw new Error("Unsupported output format")
+    switch (outputFormat) {
+      case ".txt":
+      case ".asc":
+        result = await this.convertToText(fileContent, inputFormat)
+        break
+      case ".pdf":
+        result = await this.convertToPdf(fileContent, inputFormat)
+        break
+      case ".doc":
+        result = await this.convertToDoc(fileContent, inputFormat)
+        break
+      case ".docx":
+        result = await this.convertToDocx(fileContent, inputFormat)
+        break
+      case ".rtf":
+        result = await this.convertToRtf(fileContent, inputFormat)
+        break
+      case ".wps":
+        result = await this.convertToWps(fileContent, inputFormat)
+        break
+      case ".wpd":
+        result = await this.convertToWpd(fileContent, inputFormat)
+        break
+      case ".msg":
+        result = await this.convertToMsg(fileContent, inputFormat)
+        break
+      default:
+        throw new Error("Unsupported output format")
     }
 
     this.updateProgress(90)
 
     // Create the output file
     const filename = `${file.name.split(".")[0]}${outputFormat}`
-    const mimeType = outputFormat === ".pdf" ? "application/pdf" : "text/plain"
+    const mimeType = this.getMimeType(outputFormat)
     const blob = new Blob([result], { type: mimeType })
 
     this.updateProgress(100)
@@ -301,6 +323,36 @@ class DocumentConverter {
     }
   }
 
+  async convertToDoc(fileData, inputFormat) {
+    // TODO: Implement DOC conversion
+    throw new Error("DOC conversion not yet implemented")
+  }
+
+  async convertToDocx(fileData, inputFormat) {
+    // TODO: Implement DOCX conversion
+    throw new Error("DOCX conversion not yet implemented")
+  }
+
+  async convertToRtf(fileData, inputFormat) {
+    // TODO: Implement RTF conversion
+    throw new Error("RTF conversion not yet implemented")
+  }
+
+  async convertToWps(fileData, inputFormat) {
+    // TODO: Implement WPS conversion
+    throw new Error("WPS conversion not yet implemented")
+  }
+
+  async convertToWpd(fileData, inputFormat) {
+    // TODO: Implement WPD conversion
+    throw new Error("WPD conversion not yet implemented")
+  }
+
+  async convertToMsg(fileData, inputFormat) {
+    // TODO: Implement MSG conversion
+    throw new Error("MSG conversion not yet implemented")
+  }
+
   showProgressBar() {
     this.progressContainer.classList.remove("hidden")
     this.updateProgress(0)
@@ -384,6 +436,21 @@ class DocumentConverter {
         }
       }, 300)
     }, 3000)
+  }
+
+  getMimeType(format) {
+    const mimeTypes = {
+      ".pdf": "application/pdf",
+      ".txt": "text/plain",
+      ".asc": "text/plain",
+      ".doc": "application/msword",
+      ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".rtf": "application/rtf",
+      ".wps": "application/vnd.ms-works",
+      ".wpd": "application/vnd.wordperfect",
+      ".msg": "application/vnd.ms-outlook",
+    }
+    return mimeTypes[format] || "application/octet-stream"
   }
 }
 
